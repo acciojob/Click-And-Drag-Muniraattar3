@@ -1,59 +1,65 @@
-// Get the container (defined area) and all cube elements.
+// Select the container and all cube elements.
 const container = document.querySelector('.items');
 const cubes = document.querySelectorAll('.item');
 
-// Initialize each cube's position so they can be moved individually.
+// Set initial positions for each cube, and attach a mousedown listener for dragging.
 cubes.forEach(cube => {
-  // Save each cube's current position as inline styles.
+  // Position each cube absolutely based on its initial offset.
   cube.style.position = 'absolute';
   cube.style.left = cube.offsetLeft + 'px';
   cube.style.top = cube.offsetTop + 'px';
+  cube.style.cursor = 'grab';
   
-  // Add mousedown event to start dragging this cube.
+  // When the cube is pressed, start dragging.
   cube.addEventListener('mousedown', dragStart);
 });
 
-// Variables to keep track of the currently dragged cube and mouse offset.
+// Variables to track the currently dragged cube and the mouse offset within it.
 let currentCube = null;
 let offsetX = 0;
 let offsetY = 0;
 
-// Called when the user starts dragging a cube.
+// Called when a cube is pressed.
 function dragStart(e) {
-  currentCube = this; // 'this' refers to the cube being dragged.
+  currentCube = this; // 'this' is the cube being dragged.
   
-  // Get the cube's current bounding rectangle.
+  // Bring the cube to the front and change the cursor.
+  currentCube.style.zIndex = 1000;
+  currentCube.style.cursor = 'grabbing';
+  
+  // Get the cube's bounding rectangle.
   const rect = currentCube.getBoundingClientRect();
-  // Calculate the offset between the mouse position and the cube's top-left corner.
+  
+  // Calculate the offset between the mouse click position and the cube's top-left corner.
   offsetX = e.clientX - rect.left;
   offsetY = e.clientY - rect.top;
   
-  // Attach mousemove and mouseup listeners to the document.
+  // Add mousemove and mouseup listeners to the document.
   document.addEventListener('mousemove', dragging);
   document.addEventListener('mouseup', dragEnd);
   
-  // Prevent default behavior (e.g., text selection).
+  // Prevent default behavior (such as text selection).
   e.preventDefault();
 }
 
-// Called continuously as the user moves the mouse with the cube selected.
+// Called continuously as the mouse moves.
 function dragging(e) {
   if (!currentCube) return;
   
-  // Get the container's bounding rectangle.
+  // Get the container's bounding rectangle and its scrollLeft (in case the container is scrolled).
   const containerRect = container.getBoundingClientRect();
   
   // Calculate the new left and top positions relative to the container.
-  let newLeft = e.clientX - containerRect.left - offsetX;
+  let newLeft = e.clientX - containerRect.left + container.scrollLeft - offsetX;
   let newTop = e.clientY - containerRect.top - offsetY;
   
-  // Determine cube and container dimensions.
+  // Get dimensions for boundary checks.
   const cubeWidth = currentCube.offsetWidth;
   const cubeHeight = currentCube.offsetHeight;
   const containerWidth = container.clientWidth;
   const containerHeight = container.clientHeight;
   
-  // Constrain the new position so the cube doesn't leave the container.
+  // Constrain the cube within the container.
   if (newLeft < 0) newLeft = 0;
   if (newTop < 0) newTop = 0;
   if (newLeft + cubeWidth > containerWidth) newLeft = containerWidth - cubeWidth;
@@ -64,9 +70,15 @@ function dragging(e) {
   currentCube.style.top = newTop + 'px';
 }
 
-// Called when the user releases the mouse button.
+// Called when the mouse is released.
 function dragEnd(e) {
-  // Remove the temporary event listeners.
+  if (currentCube) {
+    // Reset z-index and cursor.
+    currentCube.style.zIndex = '';
+    currentCube.style.cursor = 'grab';
+  }
+  
+  // Remove the event listeners.
   document.removeEventListener('mousemove', dragging);
   document.removeEventListener('mouseup', dragEnd);
   currentCube = null;
